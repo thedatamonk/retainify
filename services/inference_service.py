@@ -11,7 +11,7 @@ import pandas as pd
 import logging
 from datetime import datetime
 import os
-
+import mlflow
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -22,9 +22,17 @@ app = FastAPI(title="Model Inference Services")
 
 logger = logging.getLogger("inference_logger")
 
+# Set the MLflow tracking URI and model name
+MLFLOW_TRACKING_URI = 'http://127.0.0.1:5000'  # Adjust according to your setup
+MODEL_NAME = "ChurnPredictorModel"  # The name you registered your model under in MLflow
+
+
+
 @app.post("/predict")
 async def generate_predictions(file: UploadFile = File(...)):
     logger.info(f'Received file: {file.filename}')
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+
 
     try:
         if check_valid_csv(file):
@@ -55,7 +63,7 @@ async def generate_predictions(file: UploadFile = File(...)):
             logger.info(f"Processed data stored successfully in {processed_filepath}")
             logger.info(f"\n{processed_data.head()}")
 
-            predictions = await test_model(data=processed_data)
+            predictions = await test_model(model_name=MODEL_NAME, data=processed_data)
             logger.info(f"Predictions generated successfully")
             
             return predictions

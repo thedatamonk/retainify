@@ -11,7 +11,7 @@ import pandas as pd
 import logging
 from datetime import datetime
 import os
-
+import mlflow
 # Configure logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -24,6 +24,8 @@ logger = logging.getLogger("training_logger")
 @app.post("/train")
 async def train_model(file: UploadFile = File(...)):
     logger.info(f'Received file: {file.filename}')
+
+    mlflow.set_tracking_uri('http://127.0.0.1:5000')
 
     try:
         if check_valid_csv(file):
@@ -38,27 +40,51 @@ async def train_model(file: UploadFile = File(...)):
             data = pd.read_csv(string_buffer)
             logger.info(f"Data from {file.filename} loaded successfully in a Pandas dataframe")
 
-            # Data cleaning and feature selection
-            processed_data = await process_data(data)
+            with mlflow.start_run(experiment_id="168527006646638648") as run:
+                # Tag the run
+                mlflow.set_tag('stage', 'dev')
+
+                # Data cleaning and feature selection
+                processed_data = await process_data(data)
+
+                # Store processed data in local storage
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
+                if not os.path.exists("./data"):
+                    os.makedirs("./data")
+
+                processed_filepath = os.path.join("./data", f"processed_data_{timestamp}.csv")
+                processed_data.to_csv(processed_filepath, index=False)
+
+                logger.info(f"Processed data stored successfully in {processed_filepath}")
+                logger.info(f"\n{processed_data.head()}")
 
 
-            # Store processed data in local storage
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                # Initiate training
+                model, metrics = await initiate_training(data=processed_data)
 
-            if not os.path.exists("./data"):
-                os.makedirs("./data")
+                # Log the metrics
+                for key, value in metrics.items():
+                    mlflow.log_metric(key, value)
 
-            processed_filepath = os.path.join("./data", f"processed_data_{timestamp}.csv")
-            processed_data.to_csv(processed_filepath, index=False)
+                # Log the model
+                mlflow.sklearn.log_model(model, "model")
 
-            logger.info(f"Processed data stored successfully in {processed_filepath}")
-            logger.info(f"\n{processed_data.head()}")
+                # Register the model
+                MODEL_NAME="ChurnPredictorModel"
+                result = mlflow.register_model(
+                    model_uri=f"runs:/{run.info.run_id}/model", name=MODEL_NAME
+                )
 
+                client = mlflow.tracking.MlflowClient()
+                
+                client.transition_model_version_stage(
+                    name=MODEL_NAME,
+                    version=result.version,
+                    stage="Staging",
+                )
 
-            # Initiate training
-            await initiate_training(data=processed_data)
-
-            return JSONResponse(content="Model trained successfully")
+            return JSONResponse(content="Model trained and logged successfully in MLflow")
         else:
             raise HTTPException(status_code=422, detail="File format not supported. Please upload a CSV file.")
     except Exception as e:

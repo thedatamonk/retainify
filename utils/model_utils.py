@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 from joblib import dump, load
+import mlflow
 
 def train_model(classifier, x_train, y_train):
 
@@ -83,10 +84,14 @@ async def initiate_training(data, test_size_frac=0.2):
     dump(classifier, model_file_path)
     print (f"Model saved in {model_file_path}")
 
+    return classifier, {"validation_f1_score": cross_validation_score}
 
-async def test_model(data):
+
+async def test_model(model_name, data):
     # Load the model
-    model = load('artifacts/random_forest.joblib')
+    # model = load('artifacts/random_forest.joblib')
+    model_uri = f"models:/{model_name}/staging"
+    model = mlflow.pyfunc.load_model(model_uri)
 
     # Make predictions
     predictions = model.predict(data.drop(columns=['customerID']))
