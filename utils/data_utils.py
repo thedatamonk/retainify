@@ -75,6 +75,21 @@ async def process_data(df):
 
     return df
 
+async def process_test_data(df):
+
+    df = convert_total_charges_to_float(df=df)
+
+    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    categorical_cols = [col for col in df.columns if col not in numeric_cols and col != 'customerID']
+
+    
+    df, label_encoder_dicts = encode_categorical_feats(df, categorical_cols=categorical_cols)
+
+    df = df.drop(columns=['PhoneService', 'gender','StreamingTV','StreamingMovies','MultipleLines','InternetService'], inplace=False)
+
+    df = scale_numeric_feats(df, numeric_cols=numeric_cols)
+
+    return df
 
 
 def balance_data(x_train, y_train):

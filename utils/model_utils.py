@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-from joblib import dump
+from joblib import dump, load
 
 def train_model(classifier, x_train, y_train):
 
@@ -82,6 +82,20 @@ async def initiate_training(data, test_size_frac=0.2):
     model_file_path = os.path.join(ARTIFACTS_DIR, "random_forest.joblib")
     dump(classifier, model_file_path)
     print (f"Model saved in {model_file_path}")
+
+
+async def test_model(data):
+    # Load the model
+    model = load('artifacts/random_forest.joblib')
+
+    # Make predictions
+    predictions = model.predict(data.drop(columns=['customerID']))
+
+    churn_predictions = [{"customerID": customer_id, "churn": int(prediction)} for customer_id, prediction in zip(data['customerID'], predictions)]
+
+    return churn_predictions    
+
+
 
 
 
