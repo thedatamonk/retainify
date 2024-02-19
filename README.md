@@ -27,19 +27,50 @@ A typical ML workflow comprises of 2 parts namely **experimentation** and **depl
 2. Deploy the training so that rapid retraining of the model is possible.
 3. Incorporate CI/CD so that deployments are automatic.
 
-<h2>Tasks completed</h2>
-
-*TODO*
-
 <h2>Architecture diagram</h2>
 
-*Insert MIRO board screen shot*
+![ML System Design Architecture Diagram](assets/ML-System-Design-Architecture.jpeg)
 
-<h2>Folder structure</h2>
 
 <h2>Setup</h2>
 
+After cloning this repo, navigate to project folder by running 
+
+```bash
+cd retainify
+```
+0. Create a Python virtual env (optional but recommended) to avoid messing up your other projects dependencies.
+
+```bash
+python -m venv venv   # create a new environment called venv
+source venv/bin/activate # activate the environment
+```
+
+1. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+2. Run training services
+
+```bash
+uvicorn services.training_service:app --port 8080
+```
+
+3. Run inference services
+
+```bash
+uvicorn services.inference_service:app --port 8000
+```
+
+4. Open MLFlow UI
+
+```bash
+mlflow ui
+```
+
 <h2>Next Steps</h2>
 
-1. Incorporate Kubeflow/Airflow to build the pipelines and manage the complete workflow
-2. Deploy and test the app on cloud
+1. Incorporate Airﬂow / Kubeﬂow to build and manage the pipeline.
+2. Implement the workﬂow on deploying a new training pipeline
+3. Setup this complete architecture in cloud
