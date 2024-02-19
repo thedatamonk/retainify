@@ -40,7 +40,7 @@ async def train_model(file: UploadFile = File(...)):
             data = pd.read_csv(string_buffer)
             logger.info(f"Data from {file.filename} loaded successfully in a Pandas dataframe")
 
-            with mlflow.start_run(experiment_id="168527006646638648") as run:
+            with mlflow.start_run() as run:
                 # Tag the run
                 mlflow.set_tag('stage', 'dev')
 
