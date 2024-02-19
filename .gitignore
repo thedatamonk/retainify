@@ -164,6 +164,5 @@ cython_debug/
 mlruns/
 mlartifacts/
 
-# data
-data/
+# Artifacts
 artifacts/
